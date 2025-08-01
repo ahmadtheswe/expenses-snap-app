@@ -4,7 +4,9 @@ import '../models/expense.dart';
 import '../main.dart';
 
 class ExpenseFormPage extends StatefulWidget {
-  const ExpenseFormPage({super.key});
+  final Expense? initialExpense;
+
+  const ExpenseFormPage({super.key, this.initialExpense});
 
   @override
   State<ExpenseFormPage> createState() => _ExpenseFormPageState();
@@ -12,10 +14,29 @@ class ExpenseFormPage extends StatefulWidget {
 
 class _ExpenseFormPageState extends State<ExpenseFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final _expenseNameController = TextEditingController();
-  final _amountController = TextEditingController();
-  DateTime _selectedDate = DateTime.now();
-  String _expenseType = 'Need'; // Default value for expense type
+  late final TextEditingController _expenseNameController;
+  late final TextEditingController _amountController;
+  late DateTime _selectedDate;
+  late String _expenseType;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Initialize controllers with pre-filled data if available
+    _expenseNameController = TextEditingController(
+      text: widget.initialExpense?.name ?? '',
+    );
+    
+    _amountController = TextEditingController(
+      text: widget.initialExpense?.amount != null 
+          ? widget.initialExpense!.amount.toString() 
+          : '',
+    );
+    
+    _selectedDate = widget.initialExpense?.createdAt ?? DateTime.now();
+    _expenseType = widget.initialExpense?.expenseType ?? 'Need';
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-08-02
+
+### Added
+- Image preview screen after taking a picture with camera
+- Pre-filled expense form from camera capture data
+- Direct navigation to expense form after accepting a captured image
+
+### Changed
+- Camera flow now follows capture → preview → edit → save pattern
+- ExpenseFormPage now accepts an optional initialExpense parameter
+
 ## [1.0.0] - 2025-08-02
 
 ### Added

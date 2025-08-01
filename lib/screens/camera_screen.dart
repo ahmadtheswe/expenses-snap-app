@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:expenses_snap_app/models/expense.dart';
+import 'package:expenses_snap_app/screens/expense_form_page.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -15,6 +16,10 @@ class _CameraScreenState extends State<CameraScreen> {
   List<CameraDescription> _cameras = [];
   bool _isInitialized = false;
   bool _isProcessing = false;
+  
+  // For image preview
+  XFile? _capturedImage;
+  bool _isPreviewMode = false;
 
   @override
   void initState() {
@@ -72,29 +77,47 @@ class _CameraScreenState extends State<CameraScreen> {
     try {
       final XFile image = await _controller!.takePicture();
       
-      // Process the captured image here
-      // For now, we'll just navigate back with a mock expense
       if (mounted) {
-        // Create a mock expense from the image (this would be replaced with actual OCR)
-        final expense = Expense(
-          name: 'Bill from camera',
-          amount: 0.0, // This would be extracted from image
-          createdAt: DateTime.now(),
-          expenseType: 'Need',
-        );
-
-        // Return to previous screen with the expense data
-        Navigator.of(context).pop(expense);
+        setState(() {
+          _capturedImage = image;
+          _isPreviewMode = true;
+          _isProcessing = false;
+        });
       }
     } catch (e) {
       _showError('Failed to take picture: $e');
-    } finally {
       if (mounted) {
         setState(() {
           _isProcessing = false;
         });
       }
     }
+  }
+
+  void _acceptImage() {
+    if (_capturedImage == null) return;
+
+    // Create a mock expense from the image (this would be replaced with actual OCR)
+    final expense = Expense(
+      name: 'Bill from camera',
+      amount: 0.0, // This would be extracted from image
+      createdAt: DateTime.now(),
+      expenseType: 'Need',
+    );
+
+    // Navigate to ExpenseFormPage with pre-filled data
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => ExpenseFormPage(initialExpense: expense),
+      ),
+    );
+  }
+
+  void _retakePicture() {
+    setState(() {
+      _capturedImage = null;
+      _isPreviewMode = false;
+    });
   }
 
   @override
@@ -112,6 +135,14 @@ class _CameraScreenState extends State<CameraScreen> {
       );
     }
 
+    if (_isPreviewMode && _capturedImage != null) {
+      return _buildPreviewScreen();
+    } else {
+      return _buildCameraScreen();
+    }
+  }
+
+  Widget _buildCameraScreen() {
     return Scaffold(
       appBar: AppBar(title: const Text('Take Bill Picture')),
       body: Column(
@@ -138,6 +169,49 @@ class _CameraScreenState extends State<CameraScreen> {
                   label: _isProcessing 
                     ? const Text('Processing...')
                     : const Text('Capture'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewScreen() {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Preview Bill Picture')),
+      body: Column(
+        children: [
+          Expanded(
+            child: Image.file(
+              File(_capturedImage!.path),
+              fit: BoxFit.contain,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Retake button
+                ElevatedButton.icon(
+                  onPressed: _retakePicture,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retake'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey,
+                  ),
+                ),
+                
+                // Use this image button
+                ElevatedButton.icon(
+                  onPressed: _acceptImage,
+                  icon: const Icon(Icons.check),
+                  label: const Text('Use This Image'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
                 ),
               ],
             ),
