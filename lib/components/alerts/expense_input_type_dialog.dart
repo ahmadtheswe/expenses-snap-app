@@ -1,4 +1,5 @@
 import 'package:expenses_snap_app/screens/expense_form_page.dart';
+import 'package:expenses_snap_app/screens/camera_screen.dart';
 import 'package:flutter/material.dart';
 
 class ExpenseInputTypeDialog extends StatelessWidget {
@@ -37,16 +38,20 @@ class ExpenseInputTypeDialog extends StatelessWidget {
           ),
         ),
         TextButton(
-          onPressed: () {
+          onPressed: () async {
             // Close dialog
             Navigator.of(context).pop();
 
-            // Show a placeholder message for now
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Bill picture feature coming soon!'),
-              ),
+            // Navigate to the camera screen and wait for result
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CameraScreen()),
             );
+            
+            // If we got a result (new expense from camera), call the callback
+            if (result != null && onExpenseAdded != null) {
+              onExpenseAdded!();
+            }
           },
           child: const Row(
             mainAxisSize: MainAxisSize.min,

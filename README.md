@@ -2,6 +2,13 @@
 
 Flutter App that lets you capture your expenses image then generate the information
 
+## Features
+
+- Add expenses manually through a form
+- Take pictures of bills to create expenses
+- View expenses in a table format
+- Categorize expenses as "Need" or "Desire"
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
@@ -16,6 +23,15 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 ## Development
+
+### Camera Access
+
+The app uses the device camera to capture bill images. For this to work properly, the following permissions are required:
+
+- **Android**: Camera permission in AndroidManifest.xml
+- **iOS**: Camera usage description in Info.plist
+
+These permissions are already included in the project files, but if you're forking this project, make sure they are present.
 
 ### Git Hooks
 
