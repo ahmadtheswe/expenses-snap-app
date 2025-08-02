@@ -24,6 +24,49 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Development
 
+### Environment Variables
+
+This project uses environment variables to store sensitive information like API keys. The app uses the `flutter_dotenv` package to load these variables.
+
+#### Setting Up Environment Variables
+
+1. Create a `.env` file in the root of your project:
+   ```
+   cp .env.example .env
+   ```
+
+2. Open the `.env` file and replace the placeholder values with your actual API keys:
+   ```
+   # OpenAI API
+   OPENAI_API_KEY=your_openai_api_key_here
+   OPENAI_MODEL=gpt-3.5-turbo
+
+   # Gemini
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+3. The `.env` file is included in `.gitignore` to prevent committing sensitive information.
+
+#### Using Environment Variables in Code
+
+To access these environment variables in your code:
+
+```dart
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// Initialize dotenv in your main.dart
+void main() async {
+   await dotenv.load(fileName: ".env");
+
+   runApp(const MyApp());
+}
+
+// Access variables
+final openaiApiKey = dotenv.env['SECRET_KEY'];
+final modelName = dotenv.env['MODEL'];
+final geminiApiKey = dotenv.env['GEMINI_API_KEY'];
+```
+
 ### Camera Access
 
 The app uses the device camera to capture bill images. For this to work properly, the following permissions are required:
