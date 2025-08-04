@@ -96,7 +96,13 @@ void main() {
       
       // Verify that the dialog appears
       expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.text('Add Expense'), findsOneWidget);
+      
+      // Use a more specific finder for the dialog title
+      expect(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Add Expense')
+      ), findsOneWidget);
+      
       expect(find.text('How would you like to add your expense?'), findsOneWidget);
       
       // Check for dialog buttons
@@ -114,15 +120,15 @@ void main() {
         ),
       );
 
-      // Tap the FAB to show dialog
+      // Initially no expenses
+      expect(app.expenses.isEmpty, true);
+      
+      // Tap FAB to show dialog
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
       
-      // Verify dialog with ExpenseInputTypeDialog is shown
+      // Verify dialog is shown
       expect(find.byType(ExpenseInputTypeDialog), findsOneWidget);
-      
-      // For a real implementation, we would need to use a mocked version of ExpenseInputTypeDialog
-      // that allows us to trigger the callback and verify the state update
     });
   });
 }

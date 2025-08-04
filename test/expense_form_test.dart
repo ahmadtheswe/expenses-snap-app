@@ -11,7 +11,7 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: ExpenseFormPage()));
 
       // Verify all form elements are rendered
-      expect(find.text('Add Expense'), findsOneWidget); // AppBar title
+      expect(find.text('Input Expense'), findsOneWidget); // Updated AppBar title
       expect(find.byType(TextFormField), findsNWidgets(2)); // Name and amount fields
       expect(find.text('Expense Name'), findsOneWidget);
       expect(find.text('Amount'), findsOneWidget);
@@ -32,6 +32,7 @@ void main() {
       await tester.pump();
 
       // Check that validation error message appears
+      expect(find.text('Please fill in all required fields.'), findsOneWidget);
       expect(find.text('Please enter an expense name'), findsOneWidget);
     });
 
@@ -45,6 +46,7 @@ void main() {
       await tester.pump();
 
       // Check that amount validation error message appears
+      expect(find.text('Please fill in all required fields.'), findsOneWidget);
       expect(find.text('Please enter an amount'), findsOneWidget);
     });
 
@@ -55,11 +57,35 @@ void main() {
       // Fill in expense name and invalid amount
       await tester.enterText(find.widgetWithText(TextFormField, 'Expense Name'), 'Test Expense');
       await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), 'not-a-number');
+      
+      // Select expense type
+      await tester.tap(find.text('Need'));
+      await tester.pump();
+      
+      // Submit form
       await tester.tap(find.text('Save Expense'));
       await tester.pump();
 
-      // Check that amount validation error message appears
+      // With the new validation approach, the error comes from the validator
+      // Look for this error message in the form validator
       expect(find.text('Please enter a valid number'), findsOneWidget);
+    });
+
+    testWidgets('Form should validate missing expense type', (WidgetTester tester) async {
+      // Build the ExpenseFormPage widget
+      await tester.pumpWidget(const MaterialApp(home: ExpenseFormPage()));
+
+      // Fill in name and amount but not expense type
+      await tester.enterText(find.widgetWithText(TextFormField, 'Expense Name'), 'Test Expense');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '42.99');
+      
+      // Submit form
+      await tester.tap(find.text('Save Expense'));
+      await tester.pump();
+
+      // Check for expense type validation error
+      expect(find.text('Please fill in all required fields.'), findsOneWidget);
+      expect(find.text('Please select an expense type'), findsOneWidget);
     });
 
     testWidgets('Form should submit successfully when all inputs are valid', (WidgetTester tester) async {
@@ -69,6 +95,10 @@ void main() {
       // Fill in all required fields with valid data
       await tester.enterText(find.widgetWithText(TextFormField, 'Expense Name'), 'Test Expense');
       await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '42.99');
+      
+      // Select expense type
+      await tester.tap(find.text('Need'));
+      await tester.pump();
       
       // Submit the form
       await tester.tap(find.text('Save Expense'));
@@ -101,40 +131,37 @@ void main() {
       expect(find.byType(DatePickerDialog), findsOneWidget);
     });
     
-    testWidgets('Radio button should have "Need" selected by default', (WidgetTester tester) async {
+    testWidgets('Should be able to select "Need" radio option', (WidgetTester tester) async {
       // Build the ExpenseFormPage widget
       await tester.pumpWidget(const MaterialApp(home: ExpenseFormPage()));
       
-      // Get the first radio button (Need)
+      // Tap on "Need" radio button
+      await tester.tap(find.text('Need'));
+      await tester.pump();
+      
+      // Get the radio button after tapping
       final needRadio = tester.widget<RadioListTile<String>>(
         find.widgetWithText(RadioListTile<String>, 'Need')
       );
       
-      // Get the second radio button (Desire)
-      final desireRadio = tester.widget<RadioListTile<String>>(
-        find.widgetWithText(RadioListTile<String>, 'Desire')
-      );
-      
-      // Verify "Need" is selected by default
+      // Verify "Need" is now selected
       expect(needRadio.groupValue, 'Need');
       expect(needRadio.value, needRadio.groupValue);
-      expect(desireRadio.value, 'Desire');
-      expect(desireRadio.value != desireRadio.groupValue, true);
     });
-    
+
     testWidgets('Should be able to select "Desire" radio option', (WidgetTester tester) async {
       // Build the ExpenseFormPage widget
       await tester.pumpWidget(const MaterialApp(home: ExpenseFormPage()));
-      
+
       // Tap on "Desire" radio button
       await tester.tap(find.text('Desire'));
       await tester.pump();
-      
+
       // Get the radio button after tapping
       final desireRadio = tester.widget<RadioListTile<String>>(
-        find.widgetWithText(RadioListTile<String>, 'Desire')
+          find.widgetWithText(RadioListTile<String>, 'Desire')
       );
-      
+
       // Verify "Desire" is now selected
       expect(desireRadio.groupValue, 'Desire');
       expect(desireRadio.value, desireRadio.groupValue);

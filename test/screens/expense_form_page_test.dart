@@ -5,6 +5,16 @@ import 'package:expenses_snap_app/models/expense.dart';
 import 'package:expenses_snap_app/main.dart' as app;
 import 'package:intl/intl.dart';
 
+class MockNavigatorObserver extends NavigatorObserver {
+  List<Route<dynamic>> pushedRoutes = [];
+  
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushedRoutes.add(route);
+    super.didPush(route, previousRoute);
+  }
+}
+
 void main() {
   // Store the original expense list to restore after tests
   late List<Expense> originalExpenses;
@@ -31,7 +41,7 @@ void main() {
       );
 
       // Check AppBar title
-      expect(find.text('Add Expense'), findsOneWidget);
+      expect(find.text('Input Expense'), findsOneWidget);
       
       // Check form fields
       expect(find.text('Expense Name'), findsOneWidget);
@@ -67,8 +77,10 @@ void main() {
       await tester.pump();
       
       // Check for validation error messages
+      expect(find.text('Please fill in all required fields.'), findsOneWidget);
       expect(find.text('Please enter an expense name'), findsOneWidget);
       expect(find.text('Please enter an amount'), findsOneWidget);
+      expect(find.text('Please select an expense type'), findsOneWidget);
       
       // Check that no expense was added
       expect(app.expenses.isEmpty, true);
@@ -87,6 +99,10 @@ void main() {
       
       // Enter invalid amount
       await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), 'not a number');
+
+      // Select expense type
+      await tester.tap(find.text('Need'));
+      await tester.pump();
       
       // Tap submit button
       await tester.tap(find.text('Save Expense'));
@@ -101,10 +117,11 @@ void main() {
 
     testWidgets('submits form successfully with valid data', (WidgetTester tester) async {
       // Build ExpenseFormPage widget
+      final mockObserver = MockNavigatorObserver();
       await tester.pumpWidget(
         MaterialApp(
           home: ExpenseFormPage(),
-          navigatorObservers: [MockNavigatorObserver()],
+          navigatorObservers: [mockObserver],
         ),
       );
 
@@ -154,9 +171,7 @@ void main() {
       await tester.pumpAndSettle();
       
       // Verify date picker dialog appears
-      // Note: The exact text on the date picker varies by locale and theme
-      // so we'll check for the dialog itself
-      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.byType(DatePickerDialog), findsOneWidget);
     });
 
     testWidgets('radio button selection changes expense type', (WidgetTester tester) async {
@@ -167,24 +182,31 @@ void main() {
         ),
       );
 
-      // Find the RadioListTile widgets
-      final needRadioFinder = find.widgetWithText(RadioListTile<String>, 'Need');
-      final desireRadioFinder = find.widgetWithText(RadioListTile<String>, 'Desire');
+      // Initially no radio button is selected with the nullable type
+      final initialNeedRadio = tester.widget<RadioListTile<String>>(
+        find.widgetWithText(RadioListTile<String>, 'Need')
+      );
+      expect(initialNeedRadio.groupValue, isNull);
       
-      expect(needRadioFinder, findsOneWidget);
-      expect(desireRadioFinder, findsOneWidget);
+      // Tap Need radio button
+      await tester.tap(find.text('Need'));
+      await tester.pump();
       
-      // By default, 'Need' should be selected
-      final needRadio = tester.widget<RadioListTile<String>>(needRadioFinder);
+      // Now 'Need' should be selected
+      final needRadio = tester.widget<RadioListTile<String>>(
+        find.widgetWithText(RadioListTile<String>, 'Need')
+      );
       expect(needRadio.groupValue, equals('Need'));
       
       // Tap Desire radio button
-      await tester.tap(desireRadioFinder);
+      await tester.tap(find.text('Desire'));
       await tester.pump();
       
       // Now 'Desire' should be selected
-      final updatedDesireRadio = tester.widget<RadioListTile<String>>(desireRadioFinder);
-      expect(updatedDesireRadio.groupValue, equals('Desire'));
+      final desireRadio = tester.widget<RadioListTile<String>>(
+        find.widgetWithText(RadioListTile<String>, 'Desire')
+      );
+      expect(desireRadio.groupValue, equals('Desire'));
       
       // Complete form and submit
       await tester.enterText(find.widgetWithText(TextFormField, 'Expense Name'), 'Test Expense');
@@ -196,12 +218,4 @@ void main() {
       expect(app.expenses.first.expenseType, 'Desire');
     });
   });
-}
-
-class MockNavigatorObserver extends NavigatorObserver {
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {}
-  
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {}
 }
