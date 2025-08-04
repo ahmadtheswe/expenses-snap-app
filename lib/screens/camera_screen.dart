@@ -99,7 +99,7 @@ class _CameraScreenState extends State<CameraScreen> {
     });
 
     try {
-      // Create a File object from the captured XFile
+      // Process the captured image
       final File imageFile = File(_capturedImage!.path);
 
       // Process the image with OpenAI
@@ -107,22 +107,18 @@ class _CameraScreenState extends State<CameraScreen> {
 
       // Extract amount from the total
       double amount = 0.0;
-      if (aiResult.total != null && aiResult.total!.isNotEmpty) {
-        // Remove currency symbols and non-numeric characters except decimal points
-        final numericString = aiResult.total!.replaceAll(RegExp(r'[^0-9.]'), '');
-        amount = double.tryParse(numericString) ?? 0.0;
+      if (aiResult.total != null) {
+        String normalizedAmount = processAmount(aiResult.total);
+        amount = double.tryParse(normalizedAmount) ?? 0.0;
       }
 
-      // Create an expense object from the OpenAI results
       final expense = Expense(
-        name: aiResult.label ?? 'Bill from camera',
+        name: aiResult.transactionTitle ?? 'Bill from camera',
         amount: amount,
         createdAt: DateTime.now(),
-        expenseType: 'Need',
       );
 
       if (mounted) {
-        // Navigate to ExpenseFormPage with pre-filled data
         Navigator.of(
           context,
         ).pushReplacement(MaterialPageRoute(builder: (context) => ExpenseFormPage(initialExpense: expense)));
@@ -188,18 +184,11 @@ class _CameraScreenState extends State<CameraScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Back button
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back'),
-                ),
-
-                // Capture button
                 ElevatedButton.icon(
                   onPressed: _isProcessing ? null : _takePicture,
                   icon: const Icon(Icons.camera),
                   label: _isProcessing ? const Text('Processing...') : const Text('Capture'),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                 ),
               ],
             ),
@@ -233,7 +222,7 @@ class _CameraScreenState extends State<CameraScreen> {
                     onPressed: _retakePicture,
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retake'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                   ),
 
                   // Use this image button
@@ -241,7 +230,7 @@ class _CameraScreenState extends State<CameraScreen> {
                     onPressed: _acceptImage,
                     icon: const Icon(Icons.check),
                     label: const Text('Use This Image'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                   ),
                 ],
               ),
@@ -249,5 +238,44 @@ class _CameraScreenState extends State<CameraScreen> {
         ],
       ),
     );
+  }
+
+  String processAmount(String? rawAmount) {
+    if (rawAmount == null || rawAmount.isEmpty) {
+      return "0";
+    }
+
+    // Step 1: Determine the likely decimal separator (. or ,)
+    // If the last separator is a comma, it's likely the decimal separator
+    final lastCommaIndex = rawAmount.lastIndexOf(',');
+    final lastDotIndex = rawAmount.lastIndexOf('.');
+
+    bool commaIsDecimal = false;
+
+    // If both separators exist, the one closest to the end is likely the decimal
+    if (lastCommaIndex > -1 && lastDotIndex > -1) {
+      commaIsDecimal = lastCommaIndex > lastDotIndex;
+    }
+    // If only comma exists and it's near the end (within last 3 chars), it's likely decimal
+    else if (lastCommaIndex > -1 && rawAmount.length - lastCommaIndex <= 3) {
+      commaIsDecimal = true;
+    }
+
+    // Step 2: Normalize the string based on our decision
+    String normalized = rawAmount;
+    if (commaIsDecimal) {
+      // Replace all dots (they're thousands separators)
+      normalized = normalized.replaceAll('.', '');
+      // Replace comma with dot for decimal
+      normalized = normalized.replaceAll(',', '.');
+    } else {
+      // Remove all commas (they're thousands separators)
+      normalized = normalized.replaceAll(',', '');
+    }
+
+    // Step 3: Remove any remaining non-numeric characters except the decimal point
+    normalized = normalized.replaceAll(RegExp(r'[^0-9.]'), '');
+
+    return normalized;
   }
 }

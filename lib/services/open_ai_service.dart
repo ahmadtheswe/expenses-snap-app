@@ -38,7 +38,7 @@ class OpenAIService {
               final jsonSubstring = cleanedReply.substring(jsonStart, jsonEnd);
               jsonMap = jsonDecode(jsonSubstring);
             } else {
-              return OpenAIReturn(total: null, currency: null, label: "Error: Could not parse JSON response");
+              return OpenAIReturn(total: null, currency: null, message: "Error: Could not parse JSON response");
             }
           }
 
@@ -47,13 +47,13 @@ class OpenAIService {
           print('JSON parse error: $parseError');
           print('Raw reply: $dataChoice');
 
-          return OpenAIReturn(total: null, currency: null, label: "Error parsing AI response: $parseError");
+          return OpenAIReturn(total: null, currency: null, message: "Error parsing AI response: $parseError");
         }
       } else {
         throw Exception('Failed to get response: ${res.body}');
       }
     } catch (e) {
-      return OpenAIReturn(total: null, currency: null, label: 'Error: ${e.toString()}');
+      return OpenAIReturn(total: null, currency: null, message: 'Error: ${e.toString()}');
     }
   }
 
@@ -74,9 +74,11 @@ class OpenAIService {
                 - The total billing amount
                 - The currency (if available)
                 - The label next to the total (e.g., "Total Due", "Amount Payable")
+                - Analyze what is the possible transaction title from the bill
                 
                 Respond in JSON:
                 {
+                  "transactionTitle": "...",
                   "total": "...",
                   "currency": "...",
                   "label": "..."

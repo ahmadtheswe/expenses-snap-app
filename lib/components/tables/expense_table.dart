@@ -45,7 +45,7 @@ class ExpenseTable extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    expense.expenseType,
+                    expense.expenseType!,
                     style: TextStyle(
                       color: expense.expenseType == 'Need' ? Colors.blue[800] : Colors.amber[800],
                     ),
